@@ -27,14 +27,21 @@ public class Main {
             return inputLine.contains(pattern);
         }
 
+        // Positive characters group
+        int indexOfOpeningSquareBracket = pattern.indexOf('[');
+        int indexOfClosingSquareBracket = pattern.indexOf(']');
+        if (indexOfOpeningSquareBracket != -1 && indexOfClosingSquareBracket != -1) {
+            String chars = pattern.substring(indexOfOpeningSquareBracket + 1, indexOfClosingSquareBracket);
+            return inputLine.chars()
+                    .distinct()
+                    .mapToObj(i -> String.valueOf((char) i))
+                    .anyMatch(chars::contains);
+        }
+
         return switch (pattern) {
             case "\\d" -> inputLine.chars().anyMatch(Character::isDigit);
-            case "\\w" -> inputLine.chars().anyMatch(ch -> Character.isLetterOrDigit(ch) || isUnderscore(ch));
+            case "\\w" -> inputLine.chars().anyMatch(ch -> Character.isLetterOrDigit(ch) || ch == '_');
             default -> false;
         };
-    }
-
-    private static boolean isUnderscore(int ch) {
-        return ch == 95;
     }
 }
