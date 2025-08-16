@@ -1,4 +1,5 @@
 import java.util.Scanner;
+import java.util.stream.Stream;
 
 public class Main {
     public static void main(String[] args) {
@@ -27,15 +28,22 @@ public class Main {
             return inputLine.contains(pattern);
         }
 
-        // Positive characters group
+        // Characters group
         int indexOfOpeningSquareBracket = pattern.indexOf('[');
         int indexOfClosingSquareBracket = pattern.indexOf(']');
         if (indexOfOpeningSquareBracket != -1 && indexOfClosingSquareBracket != -1) {
-            String chars = pattern.substring(indexOfOpeningSquareBracket + 1, indexOfClosingSquareBracket);
-            return inputLine.chars()
+            String substring = pattern.substring(indexOfOpeningSquareBracket + 1, indexOfClosingSquareBracket);
+            boolean isNegativeCharactersGroup = substring.startsWith("^");
+            if (isNegativeCharactersGroup) {
+                substring = substring.substring(1);
+            }
+            String chars = substring;
+            Stream<String> stringStream = inputLine.chars()
                     .distinct()
-                    .mapToObj(i -> String.valueOf((char) i))
-                    .anyMatch(chars::contains);
+                    .mapToObj(i -> String.valueOf((char) i));
+            return isNegativeCharactersGroup ?
+                    stringStream.anyMatch(ch -> !chars.contains(ch)) :
+                    stringStream.anyMatch(substring::contains);
         }
 
         return switch (pattern) {
