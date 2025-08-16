@@ -15,6 +15,7 @@ public class Main {
         System.err.println("Logs from your program will appear here!");
 
         if (matchPattern(inputLine, pattern)) {
+            System.out.println("Success");
             System.exit(0);
         } else {
             System.exit(1);
@@ -24,10 +25,16 @@ public class Main {
     public static boolean matchPattern(String inputLine, String pattern) {
         if (pattern.length() == 1) {
             return inputLine.contains(pattern);
-        } else if (pattern.equals("\\d")) {
-            return inputLine.chars().anyMatch(Character::isDigit);
-        } else {
-            throw new RuntimeException("Unhandled pattern: " + pattern);
         }
+
+        return switch (pattern) {
+            case "\\d" -> inputLine.chars().anyMatch(Character::isDigit);
+            case "\\w" -> inputLine.chars().anyMatch(ch -> Character.isLetterOrDigit(ch) || isUnderscore(ch));
+            default -> false;
+        };
+    }
+
+    private static boolean isUnderscore(int ch) {
+        return ch == 95;
     }
 }
