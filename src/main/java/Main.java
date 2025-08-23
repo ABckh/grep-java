@@ -1,5 +1,4 @@
 import java.util.Scanner;
-import java.util.stream.Stream;
 
 public class Main {
     public static void main(String[] args) {
@@ -14,42 +13,13 @@ public class Main {
 
         // You can use print statements as follows for debugging, they'll be visible when running tests.
         System.err.println("Logs from your program will appear here!");
+        var matcher = new RegularExpressionMatcher();
 
-        if (matchPattern(inputLine, pattern)) {
+        if (matcher.match(inputLine, pattern)) {
             System.out.println("Success");
             System.exit(0);
         } else {
             System.exit(1);
         }
-    }
-
-    public static boolean matchPattern(String inputLine, String pattern) {
-        if (pattern.length() == 1) {
-            return inputLine.contains(pattern);
-        }
-
-        // Characters group
-        int indexOfOpeningSquareBracket = pattern.indexOf('[');
-        int indexOfClosingSquareBracket = pattern.indexOf(']');
-        if (indexOfOpeningSquareBracket != -1 && indexOfClosingSquareBracket != -1) {
-            String substring = pattern.substring(indexOfOpeningSquareBracket + 1, indexOfClosingSquareBracket);
-            boolean isNegativeCharactersGroup = substring.startsWith("^");
-            if (isNegativeCharactersGroup) {
-                substring = substring.substring(1);
-            }
-            String chars = substring;
-            Stream<String> stringStream = inputLine.chars()
-                    .distinct()
-                    .mapToObj(i -> String.valueOf((char) i));
-            return isNegativeCharactersGroup ?
-                    stringStream.anyMatch(ch -> !chars.contains(ch)) :
-                    stringStream.anyMatch(substring::contains);
-        }
-
-        return switch (pattern) {
-            case "\\d" -> inputLine.chars().anyMatch(Character::isDigit);
-            case "\\w" -> inputLine.chars().anyMatch(ch -> Character.isLetterOrDigit(ch) || ch == '_');
-            default -> false;
-        };
     }
 }
