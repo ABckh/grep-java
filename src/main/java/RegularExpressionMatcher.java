@@ -14,18 +14,7 @@ public class RegularExpressionMatcher {
         int indexOfOpeningSquareBracket = pattern.indexOf('[');
         int indexOfClosingSquareBracket = pattern.indexOf(']');
         if (indexOfOpeningSquareBracket != -1 && indexOfClosingSquareBracket != -1) {
-            String substring = pattern.substring(indexOfOpeningSquareBracket + 1, indexOfClosingSquareBracket);
-            boolean isNegativeCharactersGroup = substring.startsWith("^");
-            if (isNegativeCharactersGroup) {
-                substring = substring.substring(1);
-            }
-            String chars = substring;
-            Stream<String> stringStream = text.chars()
-                    .distinct()
-                    .mapToObj(i -> String.valueOf((char) i));
-            return isNegativeCharactersGroup ?
-                    stringStream.anyMatch(ch -> !chars.contains(ch)) :
-                    stringStream.anyMatch(substring::contains);
+            return matchCharacterGroups(text, pattern, indexOfOpeningSquareBracket, indexOfClosingSquareBracket);
         }
         //endregion
 
@@ -43,6 +32,21 @@ public class RegularExpressionMatcher {
         return false;
     }
 
+    private boolean matchCharacterGroups(String text, String pattern, int indexOfOpeningSquareBracket, int indexOfClosingSquareBracket) {
+        String substring = pattern.substring(indexOfOpeningSquareBracket + 1, indexOfClosingSquareBracket);
+        boolean isNegativeCharactersGroup = substring.startsWith("^");
+        if (isNegativeCharactersGroup) {
+            substring = substring.substring(1);
+        }
+        String chars = substring;
+        Stream<String> stringStream = text.chars()
+                .distinct()
+                .mapToObj(i -> String.valueOf((char) i));
+        return isNegativeCharactersGroup ?
+                stringStream.anyMatch(ch -> !chars.contains(ch)) :
+                stringStream.anyMatch(substring::contains);
+    }
+
     private boolean matchHere(String pattern, int patternIndex, String text, int textIndex) {
         System.out.println("patternIndex:" + patternIndex);
         System.out.println("textIndex: " + textIndex);
@@ -52,8 +56,11 @@ public class RegularExpressionMatcher {
         if (pattern.charAt(patternIndex) == '$' && patternIndex + 1 == pattern.length()) {
             return textIndex == text.length();
         }
-        if (patternIndex + 1 < pattern.length() && pattern.charAt(patternIndex + 1) == '*') {
+        if (doesMatchQuantifier('*', pattern, patternIndex)) {
             return matchStar(pattern.charAt(patternIndex), pattern, patternIndex + 2, text, textIndex);
+        }
+        if (doesMatchQuantifier('+', pattern, patternIndex)) {
+            return matchPlus(pattern.charAt(patternIndex), pattern, patternIndex + 2, text, textIndex);
         }
         if (doesMatchShorthand('d', pattern, patternIndex, text, textIndex)) {
             return matchDigit(pattern, patternIndex, text, textIndex);
@@ -77,8 +84,14 @@ public class RegularExpressionMatcher {
         return false;
     }
 
-    private boolean doesMatchShorthand(char ch, String pattern, int patternIndex, String text, int textIndex) {
-        return textIndex != text.length() && patternIndex + 1 < pattern.length() && pattern.charAt(patternIndex) == '\\' && pattern.charAt(patternIndex + 1) == ch;
+    private boolean matchPlus(char ch, String pattern, int patternIndex, String text, int textIndex) {
+        while (textIndex < text.length() && (text.charAt(textIndex++) == ch || ch == '.')) {
+            if (matchHere(pattern, patternIndex, text, textIndex)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private boolean matchDigit(String pattern, int patternIndex, String text, int textIndex) {
@@ -93,5 +106,13 @@ public class RegularExpressionMatcher {
             return matchHere(pattern, patternIndex + 2, text, textIndex + 1);
         }
         return false;
+    }
+
+    private boolean doesMatchQuantifier(char ch, String pattern, int patternIndex) {
+        return patternIndex + 1 < pattern.length() && pattern.charAt(patternIndex + 1) == ch;
+    }
+
+    private boolean doesMatchShorthand(char ch, String pattern, int patternIndex, String text, int textIndex) {
+        return textIndex != text.length() && patternIndex + 1 < pattern.length() && pattern.charAt(patternIndex) == '\\' && pattern.charAt(patternIndex + 1) == ch;
     }
 }
