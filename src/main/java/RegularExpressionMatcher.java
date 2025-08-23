@@ -62,6 +62,9 @@ public class RegularExpressionMatcher {
         if (doesMatchQuantifier('+', pattern, patternIndex)) {
             return matchPlus(pattern.charAt(patternIndex), pattern, patternIndex + 2, text, textIndex);
         }
+        if (doesMatchQuantifier('?', pattern, patternIndex)) {
+            return matchQuestionMark(pattern.charAt(patternIndex), pattern, patternIndex + 2, text, textIndex);
+        }
         if (doesMatchShorthand('d', pattern, patternIndex, text, textIndex)) {
             return matchDigit(pattern, patternIndex, text, textIndex);
         }
@@ -90,6 +93,17 @@ public class RegularExpressionMatcher {
                 return true;
             }
         }
+
+        return false;
+    }
+
+    private boolean matchQuestionMark(char ch, String pattern, int patternIndex, String text, int textIndex) {
+        int counter = 0;
+        do {
+            if (matchHere(pattern, patternIndex, text, textIndex)) {
+                return true;
+            }
+        } while (counter++ <= 1 && textIndex < text.length() && (text.charAt(textIndex++) == ch || ch == '.'));
 
         return false;
     }
