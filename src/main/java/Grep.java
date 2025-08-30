@@ -20,6 +20,7 @@ public class Grep {
         return matcher.recognizes(text);
     }
 
+    // FIXME: do not preprocess (did not have a chance to think of a better way)
     private String preProcess(String pattern) {
         StringBuilder sb = new StringBuilder();
 
