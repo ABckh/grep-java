@@ -1,12 +1,14 @@
+package com.grep;
+
 import java.util.HashSet;
 
 public class DirectedGraph {
-    private final int numberOfVertices;        // number of vertices in this DirectedGraph
+    private final int numberOfVertices;        // number of vertices in this com.grep.DirectedGraph
     private final HashSet<Integer>[] adj;      // adj[v] = adjacency list for vertex v (vertices pointing from V)
 
     public DirectedGraph(int numberOfVertices) {
         if (numberOfVertices < 0) {
-            throw new IllegalArgumentException("Number of vertices in a DirectedGraph must be non-negative");
+            throw new IllegalArgumentException("Number of vertices in a com.grep.DirectedGraph must be non-negative");
         }
         this.numberOfVertices = numberOfVertices;
         adj = new HashSet[numberOfVertices];
