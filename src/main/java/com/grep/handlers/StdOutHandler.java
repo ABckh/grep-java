@@ -6,7 +6,7 @@ import java.util.Scanner;
 
 public class StdOutHandler implements InputHandler {
     @Override
-    public void handle(String[] args) {
+    public int handle(String[] args) {
         Grep grep = new Grep(args[1]);
 
         Scanner scanner = new Scanner(System.in);
@@ -14,9 +14,9 @@ public class StdOutHandler implements InputHandler {
 
         if (grep.match(inputLine)) {
             System.out.println("Success");
-            System.exit(0);
+            return 0;
         }
 
-        System.exit(1);
+        return 1;
     }
 }

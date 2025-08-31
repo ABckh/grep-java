@@ -9,18 +9,14 @@ public class Main {
             System.out.println("Usage: ./your_program.sh -E <pattern>");
             System.exit(1);
         }
-        if (args.length > 3) {
-            System.out.println("Usage: ./your_program.sh -E <pattern> <file>");
-            System.exit(1);
-        }
 
         FileHandler fileHandler = new FileHandler();
         StdOutHandler stdOutHandler = new StdOutHandler();
 
-        if (args.length == 3) {
-            fileHandler.handle(args);
-        } else {
-            stdOutHandler.handle(args);
-        }
+        int exitCode = args.length == 2
+                ? stdOutHandler.handle(args)
+                : fileHandler.handle(args);
+
+        System.exit(exitCode);
     }
 }

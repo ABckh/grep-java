@@ -8,31 +8,53 @@ import java.io.FileReader;
 import java.io.IOException;
 
 public class FileHandler implements InputHandler {
+    private static final int FIRST_FILE_INDEX = 2;
+
     @Override
-    public void handle(String[] args) {
+    public int handle(String[] args) {
         Grep grep = new Grep(args[1]);
 
-        String fileName = args[2];
+        int exitCode = 1;
+        boolean showFileName = FIRST_FILE_INDEX + 1 != args.length;
 
-        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(fileName))) {
-            String line = bufferedReader.readLine();
-
-            int exitCode = 1;
-            while (line != null) {
-                if (grep.match(line)) {
+        for (int i = FIRST_FILE_INDEX; i < args.length; i++) {
+            String fileName = args[i];
+            try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
+                boolean matched = processFile(grep, reader, fileName, showFileName);
+                if (matched) {
                     exitCode = 0;
-                    System.out.println(line);
                 }
+            } catch (FileNotFoundException e) {
+                System.out.println(fileName + ": No such file or directory");
+            } catch (IOException e) {
+                System.out.println(fileName + ": I/O Error");
+            }
+        }
 
-                line = bufferedReader.readLine();
+        return exitCode;
+    }
+
+    private boolean processFile(Grep grep, BufferedReader bufferedReader, String fileName, boolean showFileName) throws IOException {
+        String line = bufferedReader.readLine();
+
+        boolean matched = false;
+        while (line != null) {
+            if (grep.match(line)) {
+                matched = true;
+                printMatched(fileName, line, showFileName);
             }
 
-            System.exit(exitCode);
-        } catch (FileNotFoundException e) {
-            System.out.println(fileName + ": No such file or directory");
-            System.exit(1);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+            line = bufferedReader.readLine();
+        }
+
+        return matched;
+    }
+
+    private void printMatched(String fileName, String line, boolean showFileName) {
+        if (showFileName) {
+            System.out.println(fileName + ":" + line);
+        } else {
+            System.out.println(line);
         }
     }
 }
