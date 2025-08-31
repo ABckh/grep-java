@@ -1,22 +1,28 @@
 package com.grep;
 
+import com.grep.handlers.DirectoryHandler;
 import com.grep.handlers.FileHandler;
+import com.grep.handlers.InputHandler;
 import com.grep.handlers.StdOutHandler;
 
 public class Main {
     public static void main(String[] args) {
-        if (args.length < 2 || !args[0].equals("-E")) {
+        if (args.length < 2 && !args[0].equals("-E")) {
             System.out.println("Usage: ./your_program.sh -E <pattern>");
             System.exit(1);
         }
 
-        FileHandler fileHandler = new FileHandler();
-        StdOutHandler stdOutHandler = new StdOutHandler();
+        InputHandler handler = getInputHandler(args);
+        System.exit(handler.handle(args));
+    }
 
-        int exitCode = args.length == 2
-                ? stdOutHandler.handle(args)
-                : fileHandler.handle(args);
-
-        System.exit(exitCode);
+    private static InputHandler getInputHandler(String[] args) {
+        if (args.length == 2) {
+            return new StdOutHandler();
+        }
+        if (args[0].equals("-r")) {
+            return new DirectoryHandler();
+        }
+        return new FileHandler();
     }
 }
