@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 
+import static java.lang.Character.getNumericValue;
 import static java.lang.Character.isDigit;
 import static java.lang.Character.isLetterOrDigit;
 
@@ -36,28 +37,28 @@ public class NFA {
 
             Set<State> match = new HashSet<>();
             for (State reachableState : reachableStates) {
-                int state = reachableState.state;
-                if (state == regexpLength || reachableState.textPos >= txt.length()) {
+                int pos = reachableState.state;
+                if (pos == regexpLength || reachableState.textPos >= txt.length()) {
                     continue;
                 }
 
                 char ch = txt.charAt(reachableState.textPos);
 
-                if (regexp[state] == ch || regexp[state] == '.') {
+                if (regexp[pos] == ch || regexp[pos] == '.') {
                     State matchedState = new State(reachableState);
-                    matchedState.state = state + 1;
+                    matchedState.state = pos + 1;
                     matchedState.textPos = reachableState.textPos + 1;
                     match.add(matchedState);
-                } else if (regexp[state] == '\\' && state + 1 < regexpLength) {
-                    char nextCh = regexp[state + 1];
-                    if (matchesShorthand(state, ch)) {
+                } else if (regexp[pos] == '\\' && pos + 1 < regexpLength) {
+                    char nextCh = regexp[pos + 1];
+                    if (matchesShorthand(pos, ch)) {
                         State matchedState = new State(reachableState);
-                        matchedState.state = state + 2;
+                        matchedState.state = pos + 2;
                         matchedState.textPos = reachableState.textPos + 1;
                         match.add(matchedState);
-                    } else if (Character.isDigit(nextCh)) {
+                    } else if (isDigit(nextCh)) {
                         // backreferences
-                        int group = Character.getNumericValue(nextCh);
+                        int group = getNumericValue(nextCh);
                         if (!reachableState.groupToStart.containsKey(group) || !reachableState.groupToEnd.containsKey(group)) {
                             continue;
                         }
@@ -79,10 +80,32 @@ public class NFA {
                         }
                         if (matches) {
                             State matchedState = new State(reachableState);
-                            matchedState.state = state + 2;
+                            matchedState.state = pos + 2;
                             matchedState.textPos = reachableState.textPos + len;
                             match.add(matchedState);
                         }
+                    }
+                } else if (regexp[pos] == '[') {
+                    int closing = pos + 1;
+                    closing = findClosing(closing);
+                    if (closing == regexpLength) {
+                        continue;
+                    }
+                    boolean negated = (pos + 1 < regexpLength && regexp[pos + 1] == '^');
+                    int start = negated ? pos + 2 : pos + 1;
+                    Set<Character> charSet = new HashSet<>();
+                    for (int i = start; i < closing; i++) {
+                        charSet.add(regexp[i]);
+                    }
+                    boolean doesMatch = charSet.contains(ch);
+                    if (negated) {
+                        doesMatch = !doesMatch;
+                    }
+                    if (doesMatch) {
+                        State matchedState = new State(reachableState);
+                        matchedState.state = closing + 1;
+                        matchedState.textPos = reachableState.textPos + 1;
+                        match.add(matchedState);
                     }
                 }
             }
@@ -93,25 +116,29 @@ public class NFA {
         return false;
     }
 
-    private boolean matchesShorthand(Integer state, Character ch) {
-        return (regexp[state + 1] == 'd' && isDigit(ch)) || (regexp[state + 1] == 'w' && (isLetterOrDigit(ch) || ch == '_'));
-    }
-
     private DirectedGraph buildEpsilonTransitionGraph() {
         DirectedGraph graph = new DirectedGraph(regexpLength + 1);
 
         int groupCounter = 0;
+        Stack<Integer> groupStack = new Stack<>();
         Stack<Integer> stack = new Stack<>();
         for (int i = 0; i < regexpLength; i++) {
             int left = i;
             if (i > 0 && regexp[i - 1] == '\\' && isShorthand(regexp[i])) {
                 left = i - 1;
+            } else if (regexp[i] == '[') {
+                int closing = i + 1;
+                closing = findClosing(closing);
+                if (closing < regexpLength) {
+                    i = closing;
+                }
             }
 
             if (regexp[i] == '(') {
                 stack.push(i);
                 groupCounter++;
                 groupStartPosToNum.put(i, groupCounter);
+                groupStack.push(groupCounter);
             } else if (regexp[i] == '|') {
                 stack.push(i);
             } else if (regexp[i] == ')') {
@@ -122,8 +149,8 @@ public class NFA {
 
                 if (!stack.isEmpty()) {
                     left = stack.pop();
-                    groupEndPosToNum.put(i, groupCounter);
-                    groupCounter--;
+                    int group = groupStack.pop();
+                    groupEndPosToNum.put(i, group);
                 }
 
                 for (int or : ors) {
@@ -148,15 +175,26 @@ public class NFA {
             if (regexp[i] == '(' || regexp[i] == '*' || regexp[i] == ')' ||
                     regexp[i] == '+' || regexp[i] == '?' ||
                     (i == 0 && regexp[i] == '^') ||
-                    (i == regexpLength - 1 && regexp[i] == '$')
-            ) {
+                    (i == regexpLength - 1 && regexp[i] == '$')) {
                 graph.addEdge(i, i + 1);
             }
         }
+
         return graph;
+    }
+
+    private boolean matchesShorthand(int state, char ch) {
+        return (regexp[state + 1] == 'd' && isDigit(ch)) || (regexp[state + 1] == 'w' && (isLetterOrDigit(ch) || ch == '_'));
     }
 
     private boolean isShorthand(char c) {
         return c == 'd' || c == 'w';
+    }
+
+    private int findClosing(int closing) {
+        while (closing < regexpLength && regexp[closing] != ']') {
+            closing++;
+        }
+        return closing;
     }
 }

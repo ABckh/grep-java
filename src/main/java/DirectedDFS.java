@@ -38,7 +38,7 @@ public class DirectedDFS {
             }
 
             if (!states.contains(adjState)) {
-                states.add(state);
+                states.add(adjState);
                 dfs(graph, adjState);
             }
         }
